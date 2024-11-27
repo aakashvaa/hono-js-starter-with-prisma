@@ -1,0 +1,17 @@
+node_modules/
+dist/
+build/
+*.log
+*.tmp
+*.bak
+.env
+.env.local
+.env.*.local
+coverage/
+.nyc_output/
+.vscode/
+.idea/
+.pnpm-debug.log*
+.yarn-debug.log*
+.yarn-error.log*
+*.DS_Store

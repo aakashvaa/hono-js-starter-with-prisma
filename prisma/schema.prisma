@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PENDING
+}
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  email     String   @unique
+  phone     String
+  password  String
+  role      UserRole @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customer Customer?
+  provider Provider?
+
+  @@map("users")
+}
+
+model Customer {
+  userId        String         @id @db.Uuid
+  address       String
+  preferences   Json?
+  user          User           @relation(fields: [userId], references: [id])
+  subscriptions Subscription[]
+  feedback      Feedback[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("customers")
+}
+
+model Provider {
+  userId          String         @id @db.Uuid
+  businessName    String
+  kitchenLocation String // Specific location of the kitchen
+  address         String // Full address (optional for flexibility)
+  city            String // City name for broader searches
+  state           String // State/Region
+  postalCode      String // Postal code for precise filtering
+  country         String // Country name (useful for international support)
+  latitude        Float? // Optional: Latitude for geolocation-based search
+  longitude       Float? // Optional: Longitude for geolocation-based search
+  user            User           @relation(fields: [userId], references: [id])
+  menu            Menu[]
+  subscriptions   Subscription[]
+  feedback        Feedback[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  @@map("providers")
+}
+
+model Subscription {
+  id         String             @id @default(uuid()) @db.Uuid
+  customerId String             @db.Uuid
+  providerId String             @db.Uuid
+  startDate  DateTime
+  endDate    DateTime
+  plan       String
+  status     SubscriptionStatus
+  customer   Customer           @relation(fields: [customerId], references: [userId], onDelete: Cascade)
+  provider   Provider           @relation(fields: [providerId], references: [userId], onDelete: Cascade)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@map("subscriptions")
+}
+
+model Menu {
+  id          String   @id @default(uuid()) @db.Uuid
+  providerId  String   @db.Uuid
+  itemName    String
+  description String
+  price       Decimal  @db.Decimal(10, 2)
+  provider    Provider @relation(fields: [providerId], references: [userId])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("menu_items")
+}
+
+model Feedback {
+  id         String   @id @default(uuid()) @db.Uuid
+  customerId String   @db.Uuid
+  providerId String   @db.Uuid
+  rating     Int
+  comments   String?
+  customer   Customer @relation(fields: [customerId], references: [userId])
+  provider   Provider @relation(fields: [providerId], references: [userId])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("feedback")
+}
